@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # AI 智能客服系统 - 快速启动脚本（本地开发）
+# 使用 Docker Compose 一键启动所有服务
 
 set -e
 
@@ -29,22 +30,30 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null; then
+# 检查 Docker Compose 是否安装（支持新旧命令）
+if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
     echo -e "${RED}错误：Docker Compose 未安装${NC}"
     echo "请先安装 Docker Compose"
     exit 1
 fi
 
+# 设置 Docker Compose 命令
+if command -v docker-compose &> /dev/null; then
+    COMPOSE_CMD="docker-compose"
+else
+    COMPOSE_CMD="docker compose"
+fi
+
 # 停止旧服务
 echo -e "${YELLOW}停止旧服务...${NC}"
-docker-compose down 2>/dev/null || true
+$COMPOSE_CMD down 2>/dev/null || true
 
 # 构建并启动
 echo -e "${YELLOW}构建并启动服务...${NC}"
-docker-compose up -d --build
+$COMPOSE_CMD up -d --build
 
 # 等待服务启动
-echo -e "${YELLOW}等待服务启动（约 30 秒）...${NC}"
+echo -e "${YELLOW}等待服务启动（约 15 秒）...${NC}"
 sleep 5
 
 # 检查服务状态
@@ -56,7 +65,7 @@ echo ""
 echo "访问地址：http://localhost"
 echo ""
 echo "常用命令:"
-echo "  查看日志：docker-compose logs -f"
-echo "  停止服务：docker-compose down"
-echo "  重启服务：docker-compose restart"
+echo "  查看日志：$COMPOSE_CMD logs -f"
+echo "  停止服务：$COMPOSE_CMD down"
+echo "  重启服务：$COMPOSE_CMD restart"
 echo ""

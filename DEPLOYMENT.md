@@ -35,6 +35,16 @@ ssh root@your-server-ip
 
 ### 2.2 安装 Docker
 
+**方式一：使用官方脚本（推荐）**
+
+```bash
+curl -fsSL https://get.docker.com | bash -s docker
+systemctl start docker
+systemctl enable docker
+```
+
+**方式二：手动安装（CentOS/Alibaba Cloud Linux）**
+
 ```bash
 # 卸载旧版本（如果有）
 sudo yum remove -y docker \
@@ -71,7 +81,7 @@ docker compose version
 # 创建配置文件
 sudo mkdir -p /etc/docker
 
-# 配置镜像加速
+# 配置镜像加速（使用阿里云镜像）
 sudo tee /etc/docker/daemon.json <<-'EOF'
 {
   "registry-mirrors": [
@@ -146,27 +156,49 @@ CHROMA_DB_PORT=8000
 
 ### 3.3 启动服务
 
+**方式一：使用 deploy.sh 脚本（自动安装 Docker 和 Docker Compose）**
+
 ```bash
 cd /opt/aics
 
-# 使用 docker-compose 启动
-docker compose up -d --build
+# 赋予执行权限
+chmod +x deploy.sh
+
+# 执行部署（自动检测并安装依赖）
+sudo ./deploy.sh
+```
+
+**方式二：使用 start.sh 脚本（需要预先安装 Docker）**
+
+```bash
+cd /opt/aics
+chmod +x start.sh
+./start.sh
+```
+
+**方式三：手动使用 docker-compose 启动**
+
+```bash
+cd /opt/aics
+
+# 构建并启动所有服务
+docker-compose up -d --build
 
 # 查看启动日志
-docker compose logs -f
+docker-compose logs -f
 ```
 
 ### 3.4 验证部署
 
 ```bash
 # 查看容器状态
-docker compose ps
+docker-compose ps
 
-# 应该看到 4 个运行中的容器：
-# - aics-frontend
-# - aics-backend
-# - aics-chromadb
-# - aics-nginx
+# 应该看到 3 个运行中的容器：
+# NAME            SERVICE     STATUS
+# ai-backend-1    backend     Up
+# ai-frontend-1   frontend    Up
+# ai-nginx-1      nginx       Up
 ```
 
 ## 四、访问应用
@@ -191,32 +223,32 @@ http://your-server-ip
 
 ```bash
 # 查看所有服务日志
-docker compose logs -f
+docker-compose logs -f
 
 # 查看特定服务日志
-docker compose logs backend
-docker compose logs frontend
-docker compose logs chromadb
+docker-compose logs backend
+docker-compose logs frontend
+docker-compose logs nginx
 ```
 
 ### 5.2 重启服务
 
 ```bash
 # 重启所有服务
-docker compose restart
+docker-compose restart
 
 # 重启单个服务
-docker compose restart backend
+docker-compose restart backend
 ```
 
 ### 5.3 停止服务
 
 ```bash
 # 停止所有服务
-docker compose down
+docker-compose down
 
-# 停止并删除数据卷（谨慎使用）
-docker compose down -v
+# 停止并删除数据卷（谨慎使用，会删除 ChromaDB 数据）
+docker-compose down -v
 ```
 
 ### 5.4 更新项目
@@ -228,7 +260,7 @@ cd /opt/aics
 git pull
 
 # 重新构建并启动
-docker compose up -d --build
+docker-compose up -d --build
 ```
 
 ### 5.5 备份数据
@@ -236,13 +268,13 @@ docker compose up -d --build
 ```bash
 # 备份 ChromaDB 数据卷
 docker run --rm \
-    -v aics_chroma_data:/source \
+    -v ai_chroma_data:/source \
     -v $(pwd):/backup \
     alpine tar czf /backup/chroma_backup.tar.gz -C /source .
 
 # 恢复数据
 docker run --rm \
-    -v aics_chroma_data:/target \
+    -v ai_chroma_data:/target \
     -v $(pwd):/backup \
     alpine tar xzf /backup/chroma_backup.tar.gz -C /target
 ```
@@ -253,10 +285,10 @@ docker run --rm \
 
 ```bash
 # 查看容器状态
-docker compose ps
+docker-compose ps
 
 # 查看具体错误
-docker compose logs backend
+docker-compose logs backend
 
 # 常见错误：
 # 1. 端口占用：修改 docker-compose.yml 端口
@@ -276,48 +308,50 @@ sudo firewall-cmd --reload
 # 登录阿里云控制台确认 80 端口已开放
 
 # 检查 Nginx 配置
-docker compose exec nginx nginx -t
+docker-compose exec nginx nginx -t
 ```
 
-### 6.3 ChromaDB 连接失败
+### 6.3 前端访问正常但 API 失败
 
 ```bash
-# 重启 ChromaDB
-docker compose restart chromadb
+# 检查后端服务状态
+docker-compose ps backend
 
-# 查看 ChromaDB 日志
-docker compose logs chromadb
+# 查看后端日志
+docker-compose logs backend
 
-# 进入 ChromaDB 容器
-docker compose exec chromadb sh
+# 测试后端直接访问
+docker-compose exec backend curl http://localhost:5000/api/health
+
+# 检查 nginx 到后端的连接
+docker-compose exec nginx nginx -T | grep upstream
 ```
 
 ### 6.4 AI 回复失败
 
 ```bash
 # 检查 API Key
-docker compose exec backend env | grep DASHSCOPE
+docker-compose exec backend env | grep DASHSCOPE
 
 # 测试 API 连通性
-docker compose exec backend curl -X POST \
+docker-compose exec backend curl -X POST \
     -H "Content-Type: application/json" \
-    -d '{"message": "test"}' \
+    -d '{"message": "test", "session_id": "test"}' \
     http://localhost:5000/api/chat
 ```
 
 ## 七、性能优化
 
-### 7.1 配置 Nginx 缓存
+### 7.1 配置 Nginx 日志轮转
 
-编辑 `nginx.conf`，添加缓存配置：
+编辑 `nginx.conf`，添加日志配置：
 
 ```nginx
-proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=api_cache:10m max_size=100m;
+http {
+    # ... 其他配置 ...
 
-location /api/ {
-    proxy_pass http://backend;
-    proxy_cache api_cache;
-    proxy_cache_valid 200 1m;
+    access_log /var/log/nginx/access.log main buffer=16k flush=1m;
+    error_log /var/log/nginx/error.log warn;
 }
 ```
 
@@ -353,17 +387,17 @@ sudo crontab -e
 }
 ```
 
-### 8.2 配置健康检查
+### 8.2 服务健康检查
 
-在 `docker-compose.yml` 中添加健康检查：
+```bash
+# 检查所有容器状态
+docker-compose ps
 
-```yaml
-backend:
-  healthcheck:
-    test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
-    interval: 30s
-    timeout: 10s
-    retries: 3
+# 检查后端健康状态
+curl http://localhost:5000/health
+
+# 检查前端访问
+curl http://localhost
 ```
 
 ## 九、常见问题
@@ -371,16 +405,23 @@ backend:
 ### Q1: 首次构建很慢
 
 使用国内镜像源：
-- 修改 `frontend/package.json` 使用 npm 淘宝镜像
-- 配置 Docker 镜像加速器
+- 修改 `Dockerfile.frontend` 和 `Dockerfile.backend` 使用国内镜像源
+- 配置 Docker 镜像加速器（见 2.3 节）
 
 ### Q2: 上传文件失败
 
-检查 `nginx.conf` 中的 `client_max_body_size` 配置。
+检查 `nginx.conf` 中的 `client_max_body_size` 配置（默认 50M）。
 
 ### Q3: 对话历史丢失
 
-ChromaDB 数据卷需要持久化，确保 `docker-compose.yml` 中配置了 volumes。
+ChromaDB 数据存储在 Docker 持久化卷中，确保不要随意执行 `docker-compose down -v`。
+
+### Q4: nginx 启动失败
+
+检查 nginx.conf 配置是否正确：
+```bash
+docker-compose exec nginx nginx -t
+```
 
 ---
 

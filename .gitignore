@@ -19,7 +19,12 @@ build/
 *.egg-info/
 
 # Docker
+.docker/
+.volumes/
+
+# ChromaDB 数据（本地开发用）
 .chroma/
+chroma_db/
 
 # 日志
 *.log

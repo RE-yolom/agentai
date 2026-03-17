@@ -114,8 +114,15 @@ cd /opt/aics
 # 赋予执行权限
 chmod +x deploy.sh
 
-# 执行部署 (需要 sudo)
+# 执行部署 (自动安装 Docker 并启动服务)
 sudo ./deploy.sh
+```
+
+**或者使用 start.sh 脚本（需要预先安装 Docker）：**
+
+```bash
+chmod +x start.sh
+./start.sh
 ```
 
 #### 步骤 4: 验证部署
@@ -133,17 +140,21 @@ curl http://localhost
 
 现在可以通过 `http://your-server-ip` 访问系统。
 
+**详细说明请查看 [DEPLOYMENT.md](./DEPLOYMENT.md)**
+
 ## 目录结构
 
 ```
 .
 ├── docker-compose.yml      # Docker 编排配置
-├── Dockerfile.frontend     # 前端 Docker 配置
+├── Dockerfile.frontend     # 前端 Docker 配置（已修复 nginx 配置问题）
 ├── Dockerfile.backend      # 后端 Docker 配置
-├── nginx.conf              # Nginx 反向代理配置
-├── deploy.sh               # 一键部署脚本
+├── nginx.conf              # Nginx 反向代理配置（主服务）
+├── start.sh                # 快速启动脚本（本地开发）
+├── deploy.sh               # 一键部署脚本（服务器）
 ├── .env                    # 环境变量配置
 ├── .env.example            # 环境变量示例
+├── DEPLOYMENT.md           # 详细部署文档
 ├── PDR.md                  # 项目设计文档
 ├── README.md               # 使用说明
 ├── frontend/               # Vue3 前端项目
@@ -163,12 +174,12 @@ curl http://localhost
 │   └── vite.config.ts
 └── backend/                # Flask 后端项目
     ├── app/
-    │   ├── routes/        # API 路由
-    │   ├── services/      # 业务逻辑 (RAG/Chat)
+    │   ├── routes/        # API 路由 (chat.py, document.py, session.py)
+    │   ├── services/      # 业务逻辑 (chat_service.py, rag_service.py)
     │   ├── config.py      # 配置文件
     │   └── __init__.py    # 应用初始化
-    ├── requirements.txt   # Python 依赖
-    └── main.py           # 应用入口
+    ├── main.py            # 应用入口
+    └── requirements.txt   # Python 依赖
 ```
 
 ## API 接口说明
@@ -252,8 +263,11 @@ DELETE /api/sessions/:id
 | `DASHSCOPE_API_KEY` | 阿里云 DashScope API Key (必填，使用通义千问模型) | - |
 | `FLASK_ENV` | Flask 运行环境 | `production` |
 | `FLASK_SECRET_KEY` | Flask 密钥 | `aics-secret-key` |
-| `CHROMA_DB_HOST` | ChromaDB 主机地址 | `chromadb` |
+| `BACKEND_PORT` | 后端服务端口 | `5000` |
+| `CHROMA_DB_HOST` | ChromaDB 主机地址 | `chromadb` (Docker 模式) |
 | `CHROMA_DB_PORT` | ChromaDB 端口 | `8000` |
+| `CHROMA_DB_TYPE` | ChromaDB 类型 | `persistent` (持久化) |
+| `CHROMA_DB_PATH` | ChromaDB 数据路径 | `/app/chroma_db` |
 | `CHUNK_SIZE` | 文档分块大小 | `512` |
 | `CHUNK_OVERLAP` | 分块重叠大小 | `50` |
 | `TOP_K` | 检索返回数量 | `3` |
@@ -327,14 +341,19 @@ proxy: {
 }
 ```
 
-### 3. ChromaDB 连接失败
+### 3. ChromaDB 相关问题
+
+后端使用持久化 ChromaDB，数据存储在 Docker 数据卷中：
 
 ```bash
-# 检查 ChromaDB 服务状态
-docker-compose ps chromadb
+# 查看 ChromaDB 数据卷
+docker volume ls | grep chroma_data
 
-# 查看 ChromaDB 日志
-docker-compose logs chromadb
+# 备份数据
+docker run --rm \
+    -v ai_chroma_data:/source \
+    -v $(pwd):/backup \
+    alpine tar czf chroma_backup.tar.gz -C /source .
 ```
 
 ### 4. API Key 无效
