@@ -51,7 +51,25 @@
       "Bash(docker-compose build frontend && docker-compose up -d 2>&1)",
       "Bash(curl -s http://localhost:80 2>&1 | head -20)",
       "Bash(curl -s http://localhost:80/api/health 2>&1)",
-      "Bash(curl -s http://localhost:80/api/chat 2>&1 | head -20)"
+      "Bash(curl -s http://localhost:80/api/chat 2>&1 | head -20)",
+      "Bash(docker compose:*)",
+      "Bash(curl -v http://localhost/api/chat -X POST -H \"Content-Type: application/json\" -d '{\"\"\"\"messages\"\"\"\":[{\"\"\"\"role\"\"\"\":\"\"\"\"user\"\"\"\",\"\"\"\"content\"\"\"\":\"\"\"\"你好\"\"\"\"}]}')",
+      "Bash(curl -v http://localhost/api/chat -X POST -H \"Content-Type: application/json\" -d '{\"\"\"\"message\"\"\"\":\"\"\"\"你好\"\"\"\"}')",
+      "Bash(curl -v http://backend:5000/api/chat -X POST -H \"Content-Type: application/json\" -d '{\"\"\"\"message\"\"\"\":\"\"\"\"你好\"\"\"\"}')",
+      "Bash(then echo:*)",
+      "Bash(break)",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(curl -X POST -H \"Content-Type: application/json\" -d '{\"\"message\"\":\"\"你好\"\"}' http://localhost/api/chat)",
+      "Bash(curl -X POST -H \"Content-Type: application/json\" -d '{\"\"\"\"message\"\"\"\":\"\"\"\"你好\"\"\"\"}' http://localhost/api/chat)",
+      "Bash(curl -v -X POST -H \"Content-Type: application/json\" -d '{\"\"\"\"message\"\"\"\":\"\"\"\"你好\"\"\"\"}' http://localhost/api/chat)",
+      "Bash(curl -v -X POST -H \"Content-Type: application/json\" -d '{\"\"\"\"message\"\"\"\":\"\"\"\"你好\"\"\"\"}' http://127.0.0.1/api/chat)",
+      "Bash(python -m json.tool)",
+      "Bash(find frontend/src -name *.ts -path */api/*)",
+      "Bash(curl -X POST -H \"Content-Type: application/json; charset=utf-8\" -d '{\"\"message\"\":\"\"hello\"\"}' http://localhost/api/chat)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Administrator\\Desktop\\AI智能客服"
     ]
   }
 }
