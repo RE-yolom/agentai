@@ -8,15 +8,15 @@ const api = axios.create({
 
 export const chatApi = {
   sendMessage(message: string, sessionId?: string): Promise<ChatResponse> {
-    return api.post('/chat', { message, session_id: sessionId })
+    return api.post('/chat', { message, session_id: sessionId }).then(res => res.data)
   },
 
   getSessions(): Promise<Session[]> {
-    return api.get('/sessions')
+    return api.get('/sessions').then(res => res.data.data || [])
   },
 
   getSession(id: string): Promise<Session> {
-    return api.get(`/sessions/${id}`)
+    return api.get(`/sessions/${id}`).then(res => res.data.data)
   },
 
   deleteSession(id: string): Promise<void> {
@@ -24,13 +24,13 @@ export const chatApi = {
   },
 
   createSession(name: string): Promise<Session> {
-    return api.post('/sessions', { name })
+    return api.post('/sessions', { name }).then(res => res.data.data)
   }
 }
 
 export const documentApi = {
   getDocuments(): Promise<Document[]> {
-    return api.get('/documents')
+    return api.get('/documents').then(res => res.data.data || [])
   },
 
   uploadDocument(file: File): Promise<Document> {
@@ -38,7 +38,7 @@ export const documentApi = {
     formData.append('file', file)
     return api.post('/documents', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    }).then(res => res.data.data)
   },
 
   deleteDocument(id: string): Promise<void> {
