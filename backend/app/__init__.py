@@ -13,7 +13,7 @@ def create_app(config_class=Config):
     CORS(app, resources={r"/api/*": {"origins": "*"}})
 
     # 初始化 ChromaDB 客户端
-    init_chroma_client(app.config['CHROMA_DB_HOST'], app.config['CHROMA_DB_PORT'])
+    init_chroma_client()
 
     # 注册蓝图
     app.register_blueprint(chat_bp, url_prefix='/api')
