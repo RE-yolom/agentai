@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \":*)",
+      "Bash(pkill -f \"python main.py\")",
+      "Bash(taskkill /F /IM python.exe)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :5000)",
+      "Bash(taskkill /F /PID 32012 /PID 32860 /PID 35012 /PID 31132 /PID 34220)",
+      "Bash(findstr :5173)",
+      "Bash(curl -s http://localhost:5173)",
+      "Read(//c/Users/Administrator/AppData/Local/Temp/claude/c--Users-Administrator-Desktop-agentai/6fc8a0ec-da3f-402a-9f69-542946c5f9a2/tasks/**)",
+      "Bash(taskkill /F /PID 4700)",
+      "Bash(python -c \"import subprocess; subprocess.run\\([''taskkill'', ''/F'', ''/PID'', ''4700'']\\)\")"
+    ]
+  }
+}

@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../Dockerfile.frontend
+    depends_on:
+      - backend
+    networks:
+      - aics-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../Dockerfile.backend
+    environment:
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY}
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-aics-secret-key-change-in-production}
+      - CHROMA_DB_HOST=chromadb
+      - CHROMA_DB_PORT=8000
+    volumes:
+      - chroma_data:/chroma_db
+    depends_on:
+      - chromadb
+    networks:
+      - aics-network
+
+  chromadb:
+    image: chromadb/chroma:latest
+    volumes:
+      - chroma_data:/chroma
+    networks:
+      - aics-network
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - aics-network
+
+networks:
+  aics-network:
+    driver: bridge
+
+volumes:
+  chroma_data:
