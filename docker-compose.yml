@@ -1,10 +1,8 @@
-version: '3.8'
-
 services:
   frontend:
     build:
-      context: .
-      dockerfile: Dockerfile.frontend
+      context: ./frontend
+      dockerfile: ../Dockerfile.frontend
     depends_on:
       - backend
     networks:

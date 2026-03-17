@@ -44,7 +44,14 @@
       "Bash(powershell -Command \"Get-Content app\\\\__init__.py -Encoding UTF8\")",
       "Bash(dir)",
       "Bash(curl -X POST http://localhost:5000/api/chat -H \"Content-Type: application/json\" -d '{\"\"message\"\": \"\"你好\"\", \"\"session_id\"\": \"\"test\"\"}')",
-      "Bash(powershell -Command \"Get-Content src\\\\api\\\\index.ts -Encoding UTF8\")"
+      "Bash(powershell -Command \"Get-Content src\\\\api\\\\index.ts -Encoding UTF8\")",
+      "Bash(docker-compose build 2>&1)",
+      "Bash(docker-compose build --no-cache frontend 2>&1)",
+      "Bash(docker-compose build frontend 2>&1)",
+      "Bash(docker-compose build frontend && docker-compose up -d 2>&1)",
+      "Bash(curl -s http://localhost:80 2>&1 | head -20)",
+      "Bash(curl -s http://localhost:80/api/health 2>&1)",
+      "Bash(curl -s http://localhost:80/api/chat 2>&1 | head -20)"
     ]
   }
 }
